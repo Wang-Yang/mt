@@ -18,6 +18,7 @@
             <img class="icon" :src="item.icon" v-if="item.icon">
             {{item.name}}
           </p>
+          <i class="num" v-show="calculateCount(item.spus)">{{calculateCount(item.spus)}}</i>
         </li>
       </ul>
     </div>
@@ -50,20 +51,32 @@
                   <span class="unit">/{{food.unit}}</span>
                 </p>
               </div>
+              <div class="cartcontrol-wrapper">
+                <app-cart-control :food="food"></app-cart-control>
+              </div>
             </li>
           </ul>
         </li>
       </ul>
     </div>
+    <!-- 购物车 -->
+    <app-shopcart :poiInfo="poiInfo" :selectFoods="selectFoods"></app-shopcart>
   </div>
 </template>
 <script>
 import BScroll from 'better-scroll'
+import Shopcart from '../shopcart/Shopcart'
+import CartControl from '../cartcontrol/CartControl'
 export default {
+  components: {
+    'app-shopcart': Shopcart,
+    'app-cart-control': CartControl
+  },
   data() {
     return {
       container: {},
       goods: [],
+      poiInfo:{},
       listHeight: [],
       menuScroll: {},
       foodScroll: {},
@@ -111,6 +124,15 @@ export default {
       // 滚动到对应元素的位置
       this.foodScroll.scrollToElement(element,250)
     },
+    calculateCount(spus) {
+      let count = 0
+      spus.forEach((food) => {
+        if (food.count > 0) {
+          count += food.count
+        }
+      })
+      return count
+    }
   },
   created() {
     fetch('/api/goods')
@@ -121,6 +143,9 @@ export default {
         if (response.code === 0) {
           this.container = response.data.container_operation_source
           this.goods = response.data.food_spu_tags
+          this.poiInfo = response.data.poi_info
+          console.log(this.poiInfo);
+          
           // DOM已经更新后执行滚动方法
           this.$nextTick(() => {
             // 执行滚动
@@ -147,6 +172,17 @@ export default {
         }
       }
       return 0
+    },
+    selectFoods() {
+      let foods = []
+      this.goods.forEach((myfoods) => {
+        myfoods.spus.forEach((food) => {
+          if (food.count > 0) {
+            foods.push(food)
+          }
+        })
+      })
+      return foods
     }
   }
 }
@@ -169,6 +205,7 @@ export default {
 }
 /* Menu item */
 .goods .menu-wrapper .menu-item {
+  position: relative;
   padding: 16px 23px 15px 10px;
   border-bottom: 1px solid #e4e4e4;
 }
